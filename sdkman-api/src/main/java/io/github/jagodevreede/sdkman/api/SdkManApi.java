@@ -7,6 +7,7 @@ import io.github.jagodevreede.sdkman.api.files.FileUtil;
 import io.github.jagodevreede.sdkman.api.files.ZipExtractTask;
 import io.github.jagodevreede.sdkman.api.http.CachedHttpClient;
 import io.github.jagodevreede.sdkman.api.http.DownloadTask;
+import io.github.jagodevreede.sdkman.api.http.SdkManUriComposer;
 import io.github.jagodevreede.sdkman.api.parser.CandidateListParser;
 import io.github.jagodevreede.sdkman.api.parser.VersionListParser;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.NotActiveException;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -29,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.github.jagodevreede.sdkman.api.OsHelper.getGlobalPath;
-import static io.github.jagodevreede.sdkman.api.OsHelper.getPlatformName;
 import static java.io.File.separator;
 import static java.net.http.HttpClient.newHttpClient;
 
@@ -49,10 +50,12 @@ public class SdkManApi {
     private Map<String, String> changes = new HashMap<>();
     private Map<String, Boolean> hasEnvironmentConfigured = new HashMap<>();
     private boolean offline;
+    private SdkManUriComposer sdkManUriComposer;
 
     public SdkManApi(String baseFolder) {
         this.baseFolder = baseFolder;
         this.client = new CachedHttpClient(baseFolder + separator + ".http_cache", DEFAUL_CACHE_DURATION, newHttpClient());
+        this.sdkManUriComposer = new SdkManUriComposer(getBaseUrl(), useJson());
     }
 
     public boolean isOffline() {
@@ -64,17 +67,43 @@ public class SdkManApi {
     }
 
     public List<Candidate> getCandidates() throws Exception {
-        String response = client.get(BASE_URL + "/candidates", offline);
+        String response = client.get(getBaseUrl() + "/candidates", offline);
         return CandidateListParser.parse(response);
     }
 
+    private boolean useJson() {
+        try {
+            return SdkManUiPreferences.load().useJsonUrl;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
+        return false;
+    }
+
+    public String getBaseUrl() {
+        try {
+            if (SdkManUiPreferences.load().useJsonUrl) {
+                return SdkManUiPreferences.load().baseUrlJson;
+            } else {
+                return SdkManUiPreferences.load().baseUrl;
+            }
+        } catch (IOException e) {
+            logger.error(String.format("Error while loading configuration of jsonUrl config. Exception: %s, message %s ", e.getMessage(), e));
+            logger.error("Using standard base url");
+        }
+        return BASE_URL;
+    }
+
+
+
     public List<CandidateVersion> getVersions(String candidate) throws IOException, InterruptedException {
-        String response = client.get(BASE_URL + "/candidates/" + candidate + "/" + getPlatformName() + "/versions/list?installed=", offline);
+        String response = client.get(sdkManUriComposer.getVersionsUrlForCandidate(candidate), offline);
         var versions = VersionListParser.parse(response);
         var localInstalled = new HashSet<>(getLocalInstalledVersions(candidate));
         var localAvailable = new HashSet<>(getLocalAvailableVersions(candidate));
         var result = new ArrayList<CandidateVersion>();
         var vendors = new HashSet<Vendor>();
+
         for (var version : versions) {
             var installed = localInstalled.remove(version.identifier());
             var available = localAvailable.remove(version.identifier());
@@ -260,9 +289,9 @@ public class SdkManApi {
         Runtime.getRuntime().addShutdownHook(printingHook);
     }
 
-    public DownloadTask download(String identifier, String version) {
+    public DownloadTask download(String identifier, String version) throws NotActiveException {
         File finalArchiveFile = new File(baseFolder, "archives" + separator + identifier + "-" + version + ".zip");
-        String url = BASE_URL + "/broker/download/" + identifier + "/" + version + "/" + getPlatformName();
+        String url = sdkManUriComposer.getDownloadUrlFor(identifier, version);
         File tempFile = new File(baseFolder, "tmp" + separator + identifier + "-" + version + ".bin");
         return new DownloadTask(url, tempFile, finalArchiveFile, identifier + "-" + version);
     }

@@ -1,9 +1,14 @@
 package io.github.jagodevreede.sdkman.api.parser;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.github.jagodevreede.sdkman.api.domain.CandidateVersion;
+import io.github.jagodevreede.sdkman.api.domain.json.SdkCandidate;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -12,6 +17,7 @@ public class VersionListParser {
 
     private static final Pattern JAVA_VERSION_PATTERN = Pattern.compile("(.*?)\\|(.*?)\\|(.*?)\\|(.*?)\\|(.*?)\\|(.*)");
     private static final Pattern OTHER_VERSION_PATTERN = Pattern.compile("(.+?)\\s+(.+?)\\s+(.+?)\\s");
+
 
     public static List<CandidateVersion> parse(String response) {
         var matcher = JAVA_VERSION_PATTERN.matcher(response);
@@ -67,5 +73,10 @@ public class VersionListParser {
             result.add(new CandidateVersion(vendor, version, dist, identifier, false, false));
         }
         return result;
+    }
+
+    private static List<SdkCandidate> parseJsonResponse(String response) {
+        Gson gson = new Gson();
+        return Arrays.stream(gson.fromJson(response, SdkCandidate[].class)).toList();
     }
 }

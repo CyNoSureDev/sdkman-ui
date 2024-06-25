@@ -14,6 +14,9 @@ public class SdkManUiPreferences {
     public String zipExecutable;
     public String tarExecutable;
     public boolean canCreateSymlink;
+    public String baseUrlJson;
+    public boolean useJsonUrl;
+    public String baseUrl;
 
     public static SdkManUiPreferences load() throws IOException {
         PROPERTY_LOCATION.getParentFile().mkdirs();
@@ -29,6 +32,9 @@ public class SdkManUiPreferences {
         uiPreferences.zipExecutable = properties.getProperty("zipExecutable", "zip");
         uiPreferences.tarExecutable = properties.getProperty("tarExecutable", "tar");
         uiPreferences.canCreateSymlink = Boolean.parseBoolean(properties.getProperty("canCreateSymlink", "true"));
+        uiPreferences.useJsonUrl = Boolean.parseBoolean(properties.getProperty("useJsonUrl", "true"));
+        uiPreferences.baseUrlJson = properties.getProperty("baseUrlJson", "https://state.sdkman.io/versions/java");
+        uiPreferences.baseUrl = properties.getProperty("baseUrl", "https://api.sdkman.io/2");
         return uiPreferences;
     }
 
@@ -40,6 +46,9 @@ public class SdkManUiPreferences {
         properties.setProperty("zipExecutable", zipExecutable);
         properties.setProperty("tarExecutable", tarExecutable);
         properties.setProperty("canCreateSymlink", String.valueOf(canCreateSymlink));
+        properties.setProperty("useJsonUrl", String.valueOf(useJsonUrl));
+        properties.setProperty("baseUrlJson", String.valueOf(baseUrlJson));
+        properties.setProperty("baseUrl", String.valueOf(baseUrl));
         properties.store(new FileOutputStream(PROPERTY_LOCATION), null);
     }
 }
