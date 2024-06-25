@@ -36,7 +36,7 @@ public class SdkManUiPreferences {
         uiPreferences.tarExecutable = properties.getProperty("tarExecutable", "tar");
         uiPreferences.canCreateSymlink = Boolean.parseBoolean(properties.getProperty("canCreateSymlink", "true"));
         uiPreferences.useJsonUrl = Boolean.parseBoolean(properties.getProperty("useJsonUrl", "false"));
-        uiPreferences.baseUrlJson = properties.getProperty("baseUrlJson", "https://state.sdkman.io/versions/java");
+        uiPreferences.baseUrlJson = properties.getProperty("baseUrlJson", "https://state.sdkman.io");
         uiPreferences.baseUrl = properties.getProperty("baseUrl", "https://api.sdkman.io/2");
         uiPreferences.showInstalled = Boolean.parseBoolean(properties.getProperty("showInstalled", "false"));
         uiPreferences.showAvailable = Boolean.parseBoolean(properties.getProperty("showAvailable", "false"));
