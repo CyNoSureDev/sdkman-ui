@@ -10,6 +10,7 @@ import io.github.jagodevreede.sdkman.api.SdkManApi;
 import io.github.jagodevreede.sdkman.api.domain.CandidateVersion;
 import io.github.jagodevreede.sdkmanui.MainScreenController;
 import io.github.jagodevreede.sdkmanui.service.ServiceRegistry;
+import io.github.jagodevreede.sdkmanui.service.TaskRunner;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
@@ -20,6 +21,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -42,7 +44,9 @@ public class VersionView {
     public VersionView(CandidateVersion candidateVersion, String globalVersionInUse, String pathVersionInUse, MainScreenController controller) {
         this.controller = controller;
         globalAction = createImageButton(globalIcon, globalEventHandler(candidateVersion));
+        globalAction.setTooltip(new Tooltip("Use this version as global SDK."));
         useAction = createImageButton(useIcon, useEventHandler(candidateVersion));
+        useAction.setTooltip(new Tooltip("Use this version as local SDK."));
         this.vendor = new SimpleStringProperty(candidateVersion.vendor());
         this.version = new SimpleStringProperty(candidateVersion.version());
         this.dist = new SimpleStringProperty(candidateVersion.dist());
@@ -94,16 +98,18 @@ public class VersionView {
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && (result.get() == buttonYesAndClose || result.get() == buttonYes)) {
                 SdkManApi api = ServiceRegistry.INSTANCE.getApi();
-                try {
-                    api.changeGlobal(controller.getSelectedCandidate(), candidateVersion.identifier());
-                } catch (IOException e) {
-                    ServiceRegistry.INSTANCE.getPopupView().showError(e);
-                }
-                if (result.get() == buttonYesAndClose) {
-                    Platform.exit();
-                } else {
-                    controller.loadData();
-                }
+                TaskRunner.run(() -> {
+                    try {
+                        api.changeGlobal(controller.getSelectedCandidate(), candidateVersion.identifier());
+                        if (result.get() == buttonYesAndClose) {
+                            Platform.exit();
+                        } else {
+                            controller.loadData();
+                        }
+                    } catch (IOException e) {
+                        ServiceRegistry.INSTANCE.getPopupView().showError(e);
+                    }
+                });
             }
             alert.close();
         };
@@ -125,11 +131,8 @@ public class VersionView {
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && (result.get() == buttonYesAndClose || result.get() == buttonYes)) {
                 SdkManApi api = ServiceRegistry.INSTANCE.getApi();
-                try {
-                    api.createExitScript("java", candidateVersion.identifier());
-                } catch (IOException e) {
-                    ServiceRegistry.INSTANCE.getPopupView().showError(e);
-                }
+                api.changeLocal(controller.getSelectedCandidate(), candidateVersion.identifier());
+
                 if (result.get() == buttonYesAndClose) {
                     Platform.exit();
                 } else {

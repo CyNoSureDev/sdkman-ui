@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class SdkManUiPreferences {
+    private static SdkManUiPreferences INSTACE;
     public static final File PROPERTY_LOCATION = new File(SdkManApi.DEFAULT_SDKMAN_HOME + "/etc/sdkmanui.preferences");
     public boolean offline;
     public boolean donePreCheck;
@@ -17,8 +18,10 @@ public class SdkManUiPreferences {
     public String baseUrlJson;
     public boolean useJsonUrl;
     public String baseUrl;
+    public boolean showInstalled;
+    public boolean showAvailable;
 
-    public static SdkManUiPreferences load() throws IOException {
+    private static SdkManUiPreferences load() throws IOException {
         PROPERTY_LOCATION.getParentFile().mkdirs();
         if (!PROPERTY_LOCATION.exists()) {
             PROPERTY_LOCATION.createNewFile();
@@ -35,7 +38,28 @@ public class SdkManUiPreferences {
         uiPreferences.useJsonUrl = Boolean.parseBoolean(properties.getProperty("useJsonUrl", "true"));
         uiPreferences.baseUrlJson = properties.getProperty("baseUrlJson", "https://state.sdkman.io/versions/java");
         uiPreferences.baseUrl = properties.getProperty("baseUrl", "https://api.sdkman.io/2");
+        uiPreferences.showInstalled = Boolean.parseBoolean(properties.getProperty("showInstalled", "false"));
+        uiPreferences.showAvailable = Boolean.parseBoolean(properties.getProperty("showAvailable", "false"));
         return uiPreferences;
+    }
+
+    public static SdkManUiPreferences getInstance()  {
+        if (INSTACE == null) {
+            try {
+                INSTACE = load();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return INSTACE;
+    }
+
+    public void saveQuite() {
+        try {
+            save();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void save() throws IOException {
@@ -49,6 +73,8 @@ public class SdkManUiPreferences {
         properties.setProperty("useJsonUrl", String.valueOf(useJsonUrl));
         properties.setProperty("baseUrlJson", String.valueOf(baseUrlJson));
         properties.setProperty("baseUrl", String.valueOf(baseUrl));
+        properties.setProperty("showInstalled", String.valueOf(showInstalled));
+        properties.setProperty("showAvailable", String.valueOf(showAvailable));
         properties.store(new FileOutputStream(PROPERTY_LOCATION), null);
     }
 }
