@@ -22,11 +22,8 @@ public class SdkManUriComposer {
     }
 
     // SdkMan provides an own download uri for fetching the binaries
-    public String getDownloadUrlFor(String identifier, String version) throws NotActiveException {
-        if (useJson) {
-            throw new NotActiveException("JSON api not yet active for downloads");
-        } else {
-            return "/broker/download/" + identifier + "/" + version + "/" + getPlatformName();
-        }
+    public String getDownloadUrlFor(String identifier, String version) {
+        //remains the same
+        return "/broker/download/" + identifier + "/" + version + "/" + getPlatformName();
     }
 }

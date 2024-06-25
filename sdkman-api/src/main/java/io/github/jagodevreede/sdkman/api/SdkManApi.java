@@ -87,7 +87,7 @@ public class SdkManApi {
 
     private boolean useJson() {
         try {
-            return SdkManUiPreferences.load().useJsonUrl;
+            return SdkManUiPreferences.getInstance().useJsonUrl;
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
         }
@@ -95,17 +95,11 @@ public class SdkManApi {
     }
 
     public String getBaseUrl() {
-        try {
-            if (SdkManUiPreferences.load().useJsonUrl) {
-                return SdkManUiPreferences.load().baseUrlJson;
-            } else {
-                return SdkManUiPreferences.load().baseUrl;
-            }
-        } catch (IOException e) {
-            logger.error(String.format("Error while loading configuration of jsonUrl config. Exception: %s, message %s ", e.getMessage(), e));
-            logger.error("Using standard base url");
+        if (SdkManUiPreferences.getInstance().useJsonUrl) {
+            return SdkManUiPreferences.getInstance().baseUrlJson;
+        } else {
+            return SdkManUiPreferences.getInstance().baseUrl;
         }
-        return BASE_URL;
     }
 
 
@@ -307,7 +301,7 @@ public class SdkManApi {
         Runtime.getRuntime().addShutdownHook(printingHook);
     }
 
-    public DownloadTask download(String identifier, String version) throws NotActiveException {
+    public DownloadTask download(String identifier, String version) {
         File finalArchiveFile = new File(baseFolder, "archives" + separator + identifier + "-" + version + ".zip");
         String url = sdkManUriComposer.getDownloadUrlFor(identifier, version);
         File tempFile = new File(baseFolder, "tmp" + separator + identifier + "-" + version + ".bin");
