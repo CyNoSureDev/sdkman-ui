@@ -22,9 +22,9 @@ public class JsonClient {
     private final Duration cacheDuration;
     private List<SdkCandidate> sdkCandidates;
 
-    public JsonClient(HttpClient httpClient, File cacheLocationFolder, Duration cacheDuration) {
+    public JsonClient(HttpClient httpClient, String cacheLocationFolder, Duration cacheDuration) {
         this.cacheDuration = cacheDuration;
-        this.cacheLocationFolder = cacheLocationFolder;
+        this.cacheLocationFolder = new File(cacheLocationFolder);
         this.httpClient = httpClient;
     }
 

@@ -75,7 +75,7 @@ public class VersionListParser {
         return result;
     }
 
-    private static List<SdkCandidate> parseJsonResponse(String response) {
+    public static List<SdkCandidate> parseJsonResponse(String response) {
         Gson gson = new Gson();
         return Arrays.stream(gson.fromJson(response, SdkCandidate[].class)).toList();
     }

@@ -4,14 +4,14 @@ import static io.github.jagodevreede.sdkman.api.OsHelper.getGlobalPath;
 import static io.github.jagodevreede.sdkman.api.OsHelper.getPlatformName;
 import static java.io.File.separator;
 import static java.net.http.HttpClient.newHttpClient;
+
+import com.google.gson.JsonParser;
 import io.github.jagodevreede.sdkman.api.domain.Candidate;
 import io.github.jagodevreede.sdkman.api.domain.CandidateVersion;
 import io.github.jagodevreede.sdkman.api.domain.Vendor;
 import io.github.jagodevreede.sdkman.api.files.FileUtil;
 import io.github.jagodevreede.sdkman.api.files.ZipExtractTask;
-import io.github.jagodevreede.sdkman.api.http.CachedHttpClient;
-import io.github.jagodevreede.sdkman.api.http.DownloadTask;
-import io.github.jagodevreede.sdkman.api.http.SdkManUriComposer;
+import io.github.jagodevreede.sdkman.api.http.*;
 import io.github.jagodevreede.sdkman.api.parser.CandidateListParser;
 import io.github.jagodevreede.sdkman.api.parser.VersionListParser;
 import org.slf4j.Logger;
@@ -58,6 +58,7 @@ public class SdkManApi {
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("(.*)-(.+)");
 
     private final CachedHttpClient client;
+    private final JsonClient jsonClient;
     private final String baseFolder;
     private Map<String, String> changes = new HashMap<>();
     private Map<String, Boolean> hasEnvironmentConfigured = new HashMap<>();
@@ -69,6 +70,7 @@ public class SdkManApi {
         this.baseFolder = baseFolder;
         this.versionFile = new File(baseFolder, "ui" + separator + "version.txt");
         this.client = new CachedHttpClient(baseFolder + separator + ".http_cache", DEFAUL_CACHE_DURATION, newHttpClient());
+        this.jsonClient = new JsonClient(newHttpClient(), baseFolder + separator + ".http_json_cache", DEFAUL_CACHE_DURATION);
         this.sdkManUriComposer = new SdkManUriComposer(getBaseUrl(), useJson());
     }
 
@@ -105,7 +107,14 @@ public class SdkManApi {
 
 
     public List<CandidateVersion> getVersions(String candidate) throws IOException, InterruptedException {
-        String response = client.get(sdkManUriComposer.getVersionsUrlForCandidate(candidate), offline);
+        String response = "";
+        if (useJson()) {
+            response = jsonClient.get(sdkManUriComposer.getVersionsUrlForCandidate(candidate), offline);
+            var list = VersionListParser.parseJsonResponse(response);
+            logger.info("Candidates first: {}", list.get(0).toString());
+        } else {
+            response = client.get(sdkManUriComposer.getVersionsUrlForCandidate(candidate), offline);
+        }
         var versions = VersionListParser.parse(response);
         var localInstalled = new HashSet<>(getLocalInstalledVersions(candidate));
         var localAvailable = new HashSet<>(getLocalAvailableVersions(candidate));
